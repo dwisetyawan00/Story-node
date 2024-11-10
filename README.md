@@ -20,8 +20,13 @@ Selamat datang di tutorial instalasi Node Story. Tutorial ini akan membantumu un
 
 Jalankan script auto-install ini:
 ```bash
-curl -s https://raw.githubusercontent.com/dwisetyawan00/Story-node/main/install-story.sh | bash
+curl -O https://raw.githubusercontent.com/dwisetyawan00/Story-node/main/install-story.sh && chmod +x install-story.sh &&./install-story.sh
 ```
+Untuk Menjalankan Perintah lainya :
+```bash
+./install-story.sh
+```
+Pilih perintah yang dibutuhkan
 
 ## 📝 Perintah lainnya ( jika dibutuhkan )
 
