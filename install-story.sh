@@ -219,54 +219,76 @@ start_services() {
 
 # Function to apply snapshot
 apply_snapshot() {
-    echo -e "${BLUE}Applying snapshot...${NC}"
+    echo -e "${PURPLE}=== Snapshot Menu ===${NC}"
+    echo -e "1) Download & Apply Story Snapshot Only"
+    echo -e "2) Download & Apply Geth Snapshot Only"
+    echo -e "3) Download & Apply Both Snapshots"
+    echo -e "4) Back to Main Menu"
     
-    # Create backup of priv_validator_state.json if exists
-    if [ -f "$HOME/.story/story/data/priv_validator_state.json" ]; then
-        cp $HOME/.story/story/data/priv_validator_state.json $HOME/.story/priv_validator_state.json.backup
-    fi
+    read -p "Choose option (1-4): " snapshot_choice
     
-    # Stop services if they're running
-    sudo systemctl stop story
-    sudo systemctl stop story-geth
-    
-    # Download snapshots
-    cd $HOME
-    echo -e "${GREEN}Downloading Geth snapshot...${NC}"
-    aria2c -x 16 -s 16 https://snapshot.spidernode.net/Geth_snapshot.lz4
-    
-    echo -e "${GREEN}Downloading Story snapshot...${NC}"
-    aria2c -x 16 -s 16 https://snapshot.spidernode.net/Story_snapshot.lz4
-    
-    # Remove old data
-    rm -rf ~/.story/story/data
-    rm -rf ~/.story/geth/odyssey/geth/chaindata
-    
-    # Extract snapshots with progress indicator
-    sudo mkdir -p /root/.story/story/data
-    echo -e "${GREEN}Extracting Story snapshot...${NC}"
-    echo -e "${YELLOW}This may take a while. Please wait...${NC}"
-    lz4 -d Story_snapshot.lz4 | pv -pterb | sudo tar x -C /root/.story/story/ 2>/dev/null
-    echo -e "${GREEN}Story snapshot extraction completed!${NC}"
-    
-    sudo mkdir -p /root/.story/geth/odyssey/geth/chaindata
-    echo -e "${GREEN}Extracting Geth snapshot...${NC}"
-    echo -e "${YELLOW}This may take a while. Please wait...${NC}"
-    lz4 -d Geth_snapshot.lz4 | pv -pterb | sudo tar x -C /root/.story/geth/odyssey/geth/ 2>/dev/null
-    echo -e "${GREEN}Geth snapshot extraction completed!${NC}"
-    
-    # Clean up snapshot files
-    rm -f Story_snapshot.lz4 Geth_snapshot.lz4
-    
-    # Restore priv_validator_state.json if backup exists
-    if [ -f "$HOME/.story/priv_validator_state.json.backup" ]; then
-        mv $HOME/.story/priv_validator_state.json.backup $HOME/.story/story/data/priv_validator_state.json
-    fi
-    
-    # Restart services
-    echo -e "${GREEN}Starting services...${NC}"
-    sudo systemctl start story-geth
-    sudo systemctl start story
+    case $snapshot_choice in
+        1|2|3)
+            # Stop services before applying any snapshot
+            sudo systemctl stop story
+            sudo systemctl stop story-geth
+            
+            # Create backup of priv_validator_state.json if exists
+            if [ -f "$HOME/.story/story/data/priv_validator_state.json" ]; then
+                cp $HOME/.story/story/data/priv_validator_state.json $HOME/.story/priv_validator_state.json.backup
+            fi
+            
+            cd $HOME
+            
+            # Story snapshot
+            if [[ $snapshot_choice == "1" || $snapshot_choice == "3" ]]; then
+                echo -e "${GREEN}Downloading Story snapshot...${NC}"
+                aria2c -x 16 -s 16 https://snapshot.spidernode.net/Story_snapshot.lz4
+                
+                # Remove old data and extract
+                rm -rf ~/.story/story/data
+                sudo mkdir -p /root/.story/story/data
+                echo -e "${GREEN}Extracting Story snapshot...${NC}"
+                echo -e "${YELLOW}This may take a while. Please wait...${NC}"
+                lz4 -d Story_snapshot.lz4 | pv -pterb | sudo tar x -C /root/.story/story/ 2>/dev/null
+                echo -e "${GREEN}Story snapshot extraction completed!${NC}"
+                rm -f Story_snapshot.lz4
+                
+                # Restore priv_validator_state.json if backup exists
+                if [ -f "$HOME/.story/priv_validator_state.json.backup" ]; then
+                    mv $HOME/.story/priv_validator_state.json.backup $HOME/.story/story/data/priv_validator_state.json
+                fi
+            fi
+            
+            # Geth snapshot
+            if [[ $snapshot_choice == "2" || $snapshot_choice == "3" ]]; then
+                echo -e "${GREEN}Downloading Geth snapshot...${NC}"
+                aria2c -x 16 -s 16 https://snapshot.spidernode.net/Geth_snapshot.lz4
+                
+                # Remove old data and extract
+                rm -rf ~/.story/geth/odyssey/geth/chaindata
+                sudo mkdir -p /root/.story/geth/odyssey/geth/chaindata
+                echo -e "${GREEN}Extracting Geth snapshot...${NC}"
+                echo -e "${YELLOW}This may take a while. Please wait...${NC}"
+                lz4 -d Geth_snapshot.lz4 | pv -pterb | sudo tar x -C /root/.story/geth/odyssey/geth/ 2>/dev/null
+                echo -e "${GREEN}Geth snapshot extraction completed!${NC}"
+                rm -f Geth_snapshot.lz4
+            fi
+            
+            # Start services
+            echo -e "${GREEN}Starting services...${NC}"
+            sudo systemctl start story-geth
+            sudo systemctl start story
+            
+            echo -e "${GREEN}Snapshot application completed!${NC}"
+            ;;
+        4)
+            return
+            ;;
+        *)
+            echo -e "${RED}Invalid option${NC}"
+            ;;
+    esac
 }
 
 # Function to save node info
@@ -434,7 +456,7 @@ while true; do
     print_logo
     echo -e "${PURPLE}=== Story Node Installation Menu ===${NC}"
     echo -e "1) Install Story Node"
-    echo -e "2) Install Snapshot saja"
+    echo -e "2) Install Snapshot"
     echo -e "3) Create Validator (Butuh sync dan fee)"
     echo -e "4) Show Node Info"
     echo -e "5) Backup Node Info"
