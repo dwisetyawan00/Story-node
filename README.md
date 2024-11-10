@@ -79,7 +79,10 @@ sudo systemctl restart story-geth
 sudo systemctl status story
 sudo systemctl status story-geth
 ```
-
+## 🚨 Menghapus semua konfigurasi node yang terinstall
+```bash
+curl -O https://raw.githubusercontent.com/dwisetyawan00/Story-node/main/cleanup.sh && chmod +x cleanup.sh && ./cleanup.sh
+```
 ## 💡 Tips
 - Selalu cek status node secara berkala
 - Simpan perintah-perintah di atas agar mudah diakses
