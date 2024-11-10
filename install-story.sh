@@ -346,7 +346,7 @@ check_detailed_sync() {
     if ! systemctl is-active --quiet story; then
         echo -e "${RED}Story service is not running${NC}"
         return
-    }
+    fi
     
     # Get Story sync status
     echo -e "\n${PURPLE}Story Client Sync Status:${NC}"
