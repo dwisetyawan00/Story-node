@@ -323,9 +323,62 @@ show_saved_node_info() {
 }
 
 # Function to check sync status
-check_sync_status() {
-    echo -e "${BLUE}Checking sync status...${NC}"
-    curl -s localhost:26657/status | jq '.result.sync_info'
+check_story_logs() {
+    echo -e "${BLUE}=== Story Client Logs ===${NC}"
+    echo -e "Press Ctrl+C to exit logs"
+    sudo journalctl -u story -f -n 100
+}
+
+check_geth_logs() {
+    echo -e "${BLUE}=== Story-Geth Logs ===${NC}"
+    echo -e "Press Ctrl+C to exit logs"
+    sudo journalctl -u story-geth -f -n 100
+}
+
+check_detailed_sync() {
+    echo -e "${BLUE}=== Node Sync Status ===${NC}"
+    
+    # Check if services are running
+    if ! systemctl is-active --quiet story-geth; then
+        echo -e "${RED}Story-Geth service is not running${NC}"
+        return
+    fi
+    if ! systemctl is-active --quiet story; then
+        echo -e "${RED}Story service is not running${NC}"
+        return
+    }
+    
+    # Get Story sync status
+    echo -e "\n${PURPLE}Story Client Sync Status:${NC}"
+    STORY_SYNC=$(curl -s localhost:26657/status)
+    CATCHING_UP=$(echo $STORY_SYNC | jq -r '.result.sync_info.catching_up')
+    LATEST_BLOCK=$(echo $STORY_SYNC | jq -r '.result.sync_info.latest_block_height')
+    LATEST_BLOCK_TIME=$(echo $STORY_SYNC | jq -r '.result.sync_info.latest_block_time')
+    
+    echo "Syncing: $CATCHING_UP"
+    echo "Latest Block: $LATEST_BLOCK"
+    echo "Latest Block Time: $LATEST_BLOCK_TIME"
+    
+    # Get Story-Geth sync status
+    echo -e "\n${PURPLE}Story-Geth Sync Status:${NC}"
+    GETH_SYNC=$(story-geth attach http://localhost:8545 --exec 'eth.syncing')
+    
+    if [ "$GETH_SYNC" == "false" ]; then
+        CURRENT_BLOCK=$(story-geth attach http://localhost:8545 --exec 'eth.blockNumber')
+        echo "Fully Synced"
+        echo "Current Block: $CURRENT_BLOCK"
+    else
+        CURRENT_BLOCK=$(echo $GETH_SYNC | jq -r '.currentBlock')
+        HIGHEST_BLOCK=$(echo $GETH_SYNC | jq -r '.highestBlock')
+        echo "Current Block: $CURRENT_BLOCK"
+        echo "Highest Block: $HIGHEST_BLOCK"
+        
+        # Calculate sync percentage
+        if [ "$HIGHEST_BLOCK" != "null" ] && [ "$HIGHEST_BLOCK" != "0" ]; then
+            SYNC_PERCENT=$(awk "BEGIN {printf \"%.2f\", ($CURRENT_BLOCK/$HIGHEST_BLOCK)*100}")
+            echo "Sync Progress: $SYNC_PERCENT%"
+        fi
+    fi
 }
 
 # Function to create validator
@@ -366,7 +419,7 @@ show_node_info() {
     echo -e "Story Client Version: $(story version)"
     echo -e "Go Version: $(go version)"
     echo -e "\nSync Status:"
-    check_sync_status
+    check_detailed_sync  # Updated to use new function instead of check_sync_status
     echo -e "\nServices Status:"
     echo -e "Story-Geth: $(systemctl is-active story-geth)"
     echo -e "Story Client: $(systemctl is-active story)"
@@ -385,9 +438,12 @@ while true; do
     echo -e "3) Create Validator (Butuh sync dan fee)"
     echo -e "4) Show Node Info"
     echo -e "5) Backup Node Info"
-    echo -e "6) Exit"
+    echo -e "6) Check Story Client Logs"
+    echo -e "7) Check Story-Geth Logs" 
+    echo -e "8) Check Sync Status"
+    echo -e "9) Exit"
     
-    read -p "Choose an option (1-6): " choice
+    read -p "Choose an option (1-9): " choice
     
     case $choice in
         1)
@@ -424,6 +480,15 @@ while true; do
             save_node_info "$(story query validator self | jq -r '.moniker')"
             ;;
         6)
+            check_story_logs
+            ;;
+        7)
+            check_geth_logs
+            ;;
+        8)
+            check_detailed_sync
+            ;;
+        9)
             echo -e "${GREEN}Exiting...${NC}"
             exit 0
             ;;
