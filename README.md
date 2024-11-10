@@ -22,16 +22,15 @@ Jalankan script auto-install ini:
 ```bash
 curl -O https://raw.githubusercontent.com/dwisetyawan00/Story-node/main/install-story.sh && chmod +x install-story.sh &&./install-story.sh
 ```
-Untuk Menjalankan Perintah lainya :
+### Untuk Menjalankan Perintah lainya :
 ```bash
 ./install-story.sh
 ```
-Pilih perintah yang dibutuhkan
+- Pilih perintah yang dibutuhkan
 
 
-
-
-
+-------------------------------------
+-------------------------------------
 
 ## 📝 Perintah lainnya ( jika dibutuhkan )
 
