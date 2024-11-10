@@ -22,6 +22,25 @@ Jalankan script auto-install ini:
 ```bash
 curl -O https://raw.githubusercontent.com/dwisetyawan00/Story-node/main/install-story.sh && chmod +x install-story.sh &&./install-story.sh
 ```
+## Edit geth.service
+```bash
+sudo tee /etc/systemd/system/story-geth.service > /dev/null <<EOF
+[Unit]
+Description=Story Geth Client
+After=network.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/root/go/bin/story-geth --odyssey --syncmode full --http --http.addr "0.0.0.0" --http.api "eth,net,web3" --http.corsdomain "*"
+Restart=on-failure
+LimitNOFILE=65535
+
+[Install]
+WantedBy=multi-user.target
+EOF
+```
+
 ### Untuk Menjalankan Perintah lainya :
 ```bash
 ./install-story.sh
