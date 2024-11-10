@@ -396,7 +396,41 @@ show_saved_node_info() {
     
     if [ -f "$info_file" ]; then
         echo -e "${BLUE}=== Saved Node Information ===${NC}"
-        cat "$info_file"
+        
+        # Membaca info dasar
+        echo "==============================================
+Story Node Information
+=============================================="
+        echo "Installation Date: $(date)"
+        
+        # Get moniker dari config
+        local moniker=""
+        if [ -f "$HOME/.story/story/config/config.toml" ]; then
+            moniker=$(grep "^moniker = " "$HOME/.story/story/config/config.toml" | cut -d'"' -f2)
+        fi
+        echo "Node Name: $moniker"
+        
+        echo -e "\n=== Validator Keys ==="
+        echo "Validator Key Backup: $HOME/.story/priv_validator_key.json.backup"
+        
+        echo -e "\n=== Validator Export Info ==="
+        if [ -f "$HOME/go/bin/story" ]; then
+            $HOME/go/bin/story validator export 2>/dev/null || echo "No validator info available"
+        else
+            echo "Story binary not found or not accessible"
+        fi
+        
+        echo -e "\n=== EVM Key Info ==="
+        if [ -f "$HOME/go/bin/story" ]; then
+            $HOME/go/bin/story validator export --export-evm-key 2>/dev/null || echo "No EVM key info available"
+        else
+            echo "Story binary not found or not accessible"
+        fi
+        
+        echo -e "\n=== Important Paths ==="
+        echo "Config Directory: $HOME/.story/story/config/"
+        echo "Data Directory: $HOME/.story/story/data/"
+        echo "Geth Data Directory: $HOME/.story/geth/odyssey/geth/chaindata"
     else
         echo -e "${RED}No saved node information found${NC}"
     fi
