@@ -26,7 +26,6 @@ curl -s https://raw.githubusercontent.com/dwisetyawan00/Story-node/main/install-
 ## 📝 Perintah lainnya ( jika dibutuhkan )
 
 ### Cek Log
-Mau ngintip apa yang terjadi di balik layar? Gunakan perintah ini:
 
 **Untuk Story Client:**
 ```bash
