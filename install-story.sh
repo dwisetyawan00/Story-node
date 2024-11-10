@@ -447,7 +447,6 @@ while true; do
     
     case $choice in
         1)
-            read -p "Do you want to install with snapshot? (y/n): " use_snapshot
             read -p "Enter your node name: " node_name
             
             check_system
@@ -456,10 +455,6 @@ while true; do
             install_binaries
             initialize_node "$node_name"
             create_service_files
-            
-            if [[ "$use_snapshot" == "y" ]]; then
-                apply_snapshot
-            fi
             
             start_services
             show_node_info
