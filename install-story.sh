@@ -11,7 +11,7 @@ NC='\033[0m' # No Color
 # Version variables
 GO_VERSION="1.22.0"
 STORY_GETH_VERSION="v0.10.0"
-STORY_CLIENT_VERSION="v0.12.0"
+STORY_CLIENT_VERSION="v0.12.1"
 
 # Function to display the logo
 print_logo() {
@@ -109,7 +109,7 @@ install_binaries() {
     chmod +x geth-linux-amd64
     mv $HOME/geth-linux-amd64 $HOME/go/bin/story-geth
     
-    # Story Client
+    # Story Client (updated version)
     wget "https://github.com/piplabs/story/releases/download/${STORY_CLIENT_VERSION}/story-linux-amd64"
     chmod +x story-linux-amd64
     mv $HOME/story-linux-amd64 $HOME/go/bin/story
