@@ -8,6 +8,8 @@ PURPLE='\033[0;35m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+
 # Version variables
 GO_VERSION="1.22.0"
 STORY_GETH_VERSION="v0.10.0"
@@ -343,6 +345,9 @@ save_node_info() {
     
     echo -e "${BLUE}Saving node information...${NC}"
     
+    # Set correct PATH
+    export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+    
     # Create node info file
     cat > "$info_file" <<EOF
 ==============================================
@@ -358,11 +363,19 @@ EOF
     
     # Export and save validator info
     echo -e "\n=== Validator Export Info ===" >> "$info_file"
-    story validator export >> "$info_file" 2>&1
+    if [ -f "$HOME/go/bin/story" ]; then
+        $HOME/go/bin/story validator export >> "$info_file" 2>&1
+    else
+        echo "Story binary not found" >> "$info_file"
+    fi
     
     # Export and save EVM key
     echo -e "\n=== EVM Key Info ===" >> "$info_file"
-    story validator export --export-evm-key >> "$info_file" 2>&1
+    if [ -f "$HOME/go/bin/story" ]; then
+        $HOME/go/bin/story validator export --export-evm-key >> "$info_file" 2>&1
+    else
+        echo "Story binary not found" >> "$info_file"
+    fi
     
     # Save important paths
     echo -e "\n=== Important Paths ===" >> "$info_file"
@@ -498,11 +511,32 @@ create_validator() {
 # Function to show node info
 show_node_info() {
     echo -e "${BLUE}=== Current Node Information ===${NC}"
-    echo -e "Story-Geth Version: $(story-geth version)"
-    echo -e "Story Client Version: $(story version)"
-    echo -e "Go Version: $(go version)"
+    
+    # Set correct PATH
+    export PATH=$PATH:/usr/local/go/bin:$HOME/go/bin
+    
+    # Check if binaries exist and use full path if needed
+    if [ -f "$HOME/go/bin/story-geth" ]; then
+        echo -e "Story-Geth Version: $($HOME/go/bin/story-geth version 2>/dev/null)"
+    else
+        echo -e "${RED}Story-Geth binary not found${NC}"
+    fi
+    
+    if [ -f "$HOME/go/bin/story" ]; then
+        echo -e "Story Client Version: $($HOME/go/bin/story version 2>/dev/null)"
+    else
+        echo -e "${RED}Story binary not found${NC}"
+    fi
+    
+    if command -v go &> /dev/null; then
+        echo -e "Go Version: $(go version)"
+    else
+        echo -e "${RED}Go not found${NC}"
+    fi
+    
     echo -e "\nSync Status:"
-    check_detailed_sync  # Updated to use new function instead of check_sync_status
+    check_detailed_sync
+    
     echo -e "\nServices Status:"
     echo -e "Story-Geth: $(systemctl is-active story-geth)"
     echo -e "Story Client: $(systemctl is-active story)"
