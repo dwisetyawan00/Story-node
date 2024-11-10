@@ -426,26 +426,42 @@ check_detailed_sync() {
     echo "Latest Block: $LATEST_BLOCK"
     echo "Latest Block Time: $LATEST_BLOCK_TIME"
     
-    # Get Story-Geth sync status
+    # Get Story-Geth sync status using RPC
     echo -e "\n${PURPLE}Story-Geth Sync Status:${NC}"
-    GETH_SYNC=$(story-geth attach http://localhost:8545 --exec 'eth.syncing')
     
-    if [ "$GETH_SYNC" == "false" ]; then
-        CURRENT_BLOCK=$(story-geth attach http://localhost:8545 --exec 'eth.blockNumber')
-        echo "Fully Synced"
-        echo "Current Block: $CURRENT_BLOCK"
-    else
-        CURRENT_BLOCK=$(echo $GETH_SYNC | jq -r '.currentBlock')
-        HIGHEST_BLOCK=$(echo $GETH_SYNC | jq -r '.highestBlock')
-        echo "Current Block: $CURRENT_BLOCK"
-        echo "Highest Block: $HIGHEST_BLOCK"
-        
-        # Calculate sync percentage
-        if [ "$HIGHEST_BLOCK" != "null" ] && [ "$HIGHEST_BLOCK" != "0" ]; then
-            SYNC_PERCENT=$(awk "BEGIN {printf \"%.2f\", ($CURRENT_BLOCK/$HIGHEST_BLOCK)*100}")
-            echo "Sync Progress: $SYNC_PERCENT%"
+    # Check sync status using curl
+    GETH_SYNC=$(curl -s -X POST -H "Content-Type: application/json" \
+        --data '{"jsonrpc":"2.0","method":"eth_syncing","params":[],"id":1}' \
+        http://localhost:8545)
+    
+    if [ "$?" -eq 0 ]; then
+        if [ "$(echo $GETH_SYNC | jq -r '.result')" == "false" ]; then
+            # Get current block if fully synced
+            CURRENT_BLOCK=$(curl -s -X POST -H "Content-Type: application/json" \
+                --data '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}' \
+                http://localhost:8545 | jq -r '.result' | printf "%d" "$(cat)")
+            echo "Fully Synced"
+            echo "Current Block: $CURRENT_BLOCK"
+        else
+            # Get sync status details
+            CURRENT_BLOCK=$(echo $GETH_SYNC | jq -r '.result.currentBlock' | printf "%d" "$(cat)")
+            HIGHEST_BLOCK=$(echo $GETH_SYNC | jq -r '.result.highestBlock' | printf "%d" "$(cat)")
+            echo "Current Block: $CURRENT_BLOCK"
+            echo "Highest Block: $HIGHEST_BLOCK"
+            
+            if [ "$HIGHEST_BLOCK" != "0" ]; then
+                SYNC_PERCENT=$(awk "BEGIN {printf \"%.2f\", ($CURRENT_BLOCK/$HIGHEST_BLOCK)*100}")
+                echo "Sync Progress: $SYNC_PERCENT%"
+            fi
         fi
+    else
+        echo -e "${RED}Unable to connect to Story-Geth RPC${NC}"
     fi
+    
+    # Show service status
+    echo -e "\nServices Status:"
+    echo -e "Story-Geth: $(systemctl is-active story-geth)"
+    echo -e "Story Client: $(systemctl is-active story)"
 }
 
 # Function to create validator
